@@ -48,8 +48,8 @@ ANALYTICS_DISABLED=true
 ALLOW_SIGNUP=true
 ALLOWED_EMAIL_DOMAINS=
 ALLOWED_EMAILS=
-RESEND_API_KEY=<required user input>
-RESEND_FROM_EMAIL=<required user input or noreply@verified-domain.com>
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/auth/callback
@@ -63,18 +63,18 @@ Mount `backend-volume` at `/app/data/uploads`. Keep the backend at one replica w
 PORT=3000
 HOSTNAME=0.0.0.0
 REMOTE_API_URL=http://${{backend.RAILWAY_PRIVATE_DOMAIN}}:8080
-NEXT_PUBLIC_API_URL=https://${{backend.RAILWAY_PUBLIC_DOMAIN}}
-NEXT_PUBLIC_WS_URL=wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws
 NEXT_PUBLIC_APP_VERSION=railway-template
 DOCS_URL=https://multica.ai
 ```
+
+Leave `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` unset for the web service. The browser uses same-origin `/api`, `/auth`, and `/ws` routes, and Next.js rewrites proxy those requests to `REMOTE_API_URL`. This keeps cookie auth on the frontend origin for Railway public domains.
 
 `DOCS_URL` is a build-time value for the Next.js `/docs` rewrite, so redeploy the frontend after changing it.
 
 ## Required After Deploy
 
-- Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` on `backend`, unless entered during template deploy.
-- Open the frontend domain and log in with an email code.
+- Open the frontend domain and log in with an email code. If `RESEND_API_KEY` is unset, read the generated code from backend logs with `railway logs --service backend --latest --lines 200 --filter "Verification code"`.
+- Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` on `backend` only when users need self-serve email delivery instead of operator log-code login.
 - Install the CLI locally with `brew install multica-ai/tap/multica`.
 - Run `multica setup self-host --server-url https://<backend-domain> --app-url https://<frontend-domain>`.
 - Create an agent and assign an issue.
