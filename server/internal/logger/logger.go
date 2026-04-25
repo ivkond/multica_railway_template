@@ -13,7 +13,7 @@ import (
 )
 
 // isTerminal reports whether the given file descriptor is connected to a
-// terminal. Used to suppress ANSI color escapes when stderr is redirected
+// terminal. Used to suppress ANSI color escapes when logs are redirected
 // to a file (e.g. daemon.log), so log files stay clean.
 func isTerminal(f *os.File) bool {
 	fi, err := f.Stat()
@@ -23,15 +23,16 @@ func isTerminal(f *os.File) bool {
 	return fi.Mode()&os.ModeCharDevice != 0
 }
 
-// Init initializes the global slog logger. Colors are enabled when stderr
+// Init initializes the global slog logger. Colors are enabled when stdout
 // is a terminal and disabled otherwise. Reads LOG_LEVEL env var (debug,
 // info, warn, error). Default: debug.
 func Init() {
 	level := parseLevel(os.Getenv("LOG_LEVEL"))
-	handler := tint.NewHandler(os.Stderr, &tint.Options{
+	out := os.Stdout
+	handler := tint.NewHandler(out, &tint.Options{
 		Level:      level,
 		TimeFormat: "15:04:05.000",
-		NoColor:    !isTerminal(os.Stderr),
+		NoColor:    !isTerminal(out),
 	})
 	slog.SetDefault(slog.New(handler))
 }
@@ -41,10 +42,11 @@ func Init() {
 // migrate) that want a component prefix.
 func NewLogger(component string) *slog.Logger {
 	level := parseLevel(os.Getenv("LOG_LEVEL"))
-	handler := tint.NewHandler(os.Stderr, &tint.Options{
+	out := os.Stdout
+	handler := tint.NewHandler(out, &tint.Options{
 		Level:      level,
 		TimeFormat: "15:04:05.000",
-		NoColor:    !isTerminal(os.Stderr),
+		NoColor:    !isTerminal(out),
 	})
 	return slog.New(handler).With("component", component)
 }

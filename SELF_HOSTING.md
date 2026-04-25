@@ -42,6 +42,10 @@ Open http://localhost:3000. To log in, configure `RESEND_API_KEY` in `.env` for 
 
 If you prefer to run each step manually:
 
+### Railway
+
+For Railway deployments, use the service configs and operator checklist in [railway/README.md](railway/README.md). After deploy, configure email auth and connect your local daemon with `multica setup self-host --server-url https://<backend-domain> --app-url https://<frontend-domain>`.
+
 ### Step 1 — Start the Server
 
 **Prerequisites:** Docker and Docker Compose.
