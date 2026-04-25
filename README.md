@@ -1,187 +1,127 @@
-<p align="center">
-  <img src="docs/assets/banner.jpg" alt="Multica — humans and agents, side by side" width="100%">
-</p>
+# Multica Railway Template
 
-<div align="center">
+This repository is a deployable Railway template for [Multica](https://github.com/multica-ai/multica), the upstream open-source managed agents platform.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
-  <img alt="Multica" src="docs/assets/logo-light.svg" width="50">
-</picture>
+For product details, feature descriptions, screenshots, CLI reference, and general Multica docs, use the original repository: <https://github.com/multica-ai/multica>.
 
-# Multica
+## What This Repository Is For
 
-**Your next 10 hires won't be human.**
+Use this repository when you want to deploy a self-hosted Multica stack on Railway from source. It keeps the upstream application code together with Railway service configuration so Railway can build and run the frontend and backend as separate services.
 
-The open-source managed agents platform.<br/>
-Turn coding agents into real teammates — assign tasks, track progress, compound skills.
+This template is intentionally deployment-focused. It does not duplicate upstream Multica documentation; it only explains how this repository is organized, how to configure it, and how to operate the Railway deployment.
 
-[![CI](https://github.com/multica-ai/multica/actions/workflows/ci.yml/badge.svg)](https://github.com/multica-ai/multica/actions/workflows/ci.yml)
-[![GitHub stars](https://img.shields.io/github/stars/multica-ai/multica?style=flat)](https://github.com/multica-ai/multica/stargazers)
+## Repository Layout
 
-[Website](https://multica.ai) · [Cloud](https://multica.ai/app) · [X](https://x.com/MulticaAI) · [Self-Hosting](SELF_HOSTING.md) · [Railway](railway/README.md) · [Contributing](CONTRIBUTING.md)
+| Path | Purpose |
+|------|---------|
+| `railway/backend.railway.json` | Railway build/start config for the Go backend service |
+| `railway/frontend.railway.json` | Railway build/start config for the Next.js frontend service |
+| `railway/README.md` | Exact Railway service variables and post-deploy checklist |
+| `server/` | Multica backend source |
+| `apps/web/` | Multica web frontend source |
+| `apps/desktop/` | Desktop app source, not required for Railway deployment |
+| `packages/` | Shared frontend packages used by the apps |
 
-**English | [简体中文](README.zh-CN.md)**
+## Prerequisites
 
-</div>
+- Railway account with permission to create projects and services
+- GitHub repository connected to Railway
+- Local `railway` CLI if you prefer CLI-driven configuration
+- Local `multica` CLI for connecting your machine as an agent runtime after deployment
+- Optional local dev tools: Node.js, pnpm, Go, and Docker
 
-## What is Multica?
+## Railway Setup
 
-Multica turns coding agents into real teammates. Assign issues to an agent like you'd assign to a colleague — they'll pick up the work, write code, report blockers, and update statuses autonomously.
+1. Create a new Railway project from this GitHub repository.
+2. Add three services: `frontend`, `backend`, and `pgvector`.
+3. Point `backend` at `/railway/backend.railway.json`.
+4. Point `frontend` at `/railway/frontend.railway.json`.
+5. Configure `pgvector` with image `pgvector/pgvector:pg17`, private networking, and a persistent volume.
+6. Set backend and frontend environment variables from `railway/README.md`.
+7. Deploy backend first, then frontend.
+8. Open the frontend public domain and complete first login.
 
-No more copy-pasting prompts. No more babysitting runs. Your agents show up on the board, participate in conversations, and compound reusable skills over time. Think of it as open-source infrastructure for managed agents — vendor-neutral, self-hosted, and designed for human + AI teams. Works with **Claude Code**, **Codex**, **OpenClaw**, **OpenCode**, **Hermes**, **Gemini**, **Pi**, and **Cursor Agent**.
+See [`railway/README.md`](railway/README.md) for copy-paste service variables, health checks, and required post-deploy steps.
 
-<p align="center">
-  <img src="docs/assets/hero-screenshot.png" alt="Multica board view" width="800">
-</p>
+## Required Services
 
-## Features
+| Service | Runs | Public Networking |
+|---------|------|-------------------|
+| `frontend` | Next.js web app | Enabled |
+| `backend` | Go API, auth, WebSocket, uploads | Enabled |
+| `pgvector` | PostgreSQL 17 with pgvector | Disabled; private networking only |
 
-Multica manages the full agent lifecycle: from task assignment to execution monitoring to skill reuse.
+Keep the backend at one replica if using the local Railway volume for uploads. Move uploads to object storage before scaling backend replicas.
 
-- **Agents as Teammates** — assign to an agent like you'd assign to a colleague. They have profiles, show up on the board, post comments, create issues, and report blockers proactively.
-- **Autonomous Execution** — set it and forget it. Full task lifecycle management (enqueue, claim, start, complete/fail) with real-time progress streaming via WebSocket.
-- **Reusable Skills** — every solution becomes a reusable skill for the whole team. Deployments, migrations, code reviews — skills compound your team's capabilities over time.
-- **Unified Runtimes** — one dashboard for all your compute. Local daemons and cloud runtimes, auto-detection of available CLIs, real-time monitoring.
-- **Multi-Workspace** — organize work across teams with workspace-level isolation. Each workspace has its own agents, issues, and settings.
+## Using The Deployment
 
----
+After Railway deployment succeeds:
 
-## Quick Install
-
-### macOS / Linux (Homebrew - recommended)
-
-```bash
-brew install multica-ai/tap/multica
-```
-
-Use `brew upgrade multica-ai/tap/multica` to keep the CLI current.
-
-### macOS / Linux (install script)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash
-```
-
-Use this if Homebrew is not available. The script installs the Multica CLI on macOS and Linux by using Homebrew when it is on `PATH`, otherwise it downloads the binary directly.
-
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex
-```
-
-Then configure, authenticate, and start the daemon in one command:
+1. Open the frontend Railway domain.
+2. Log in with an email code. If email delivery is not configured, read the verification code from backend logs.
+3. Install the Multica CLI locally.
+4. Connect your local machine to the self-hosted deployment:
 
 ```bash
-multica setup          # Connect to Multica Cloud, log in, start daemon
+multica setup self-host --server-url https://<backend-domain> --app-url https://<frontend-domain>
 ```
 
-> **Self-hosting?** Add `--with-server` to deploy a full Multica server on your machine:
->
-> ```bash
-> curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash -s -- --with-server
-> multica setup self-host
-> ```
->
-> This pulls the official Multica images from GHCR (latest stable by default). Requires Docker. See the [Self-Hosting Guide](SELF_HOSTING.md) for details.
-> If the selected GHCR tag has not been published yet, fall back to `make selfhost-build` from a checkout.
-
----
-
-## Getting Started
-
-### 1. Set up and start the daemon
+5. Confirm the daemon is connected:
 
 ```bash
-multica setup           # Configure, authenticate, and start the daemon
+multica daemon status
 ```
 
-The daemon runs in the background and auto-detects agent CLIs (`claude`, `codex`, `openclaw`, `opencode`, `hermes`, `gemini`, `pi`, `cursor-agent`) on your PATH.
+6. Create an agent in the web app, assign an issue, and watch the agent execute on your connected runtime.
 
-### 2. Verify your runtime
+## Local Development
 
-Open your workspace in the Multica web app. Navigate to **Settings → Runtimes** — you should see your machine listed as an active **Runtime**.
-
-> **What is a Runtime?** A Runtime is a compute environment that can execute agent tasks. It can be your local machine (via the daemon) or a cloud instance. Each runtime reports which agent CLIs are available, so Multica knows where to route work.
-
-### 3. Create an agent
-
-Go to **Settings → Agents** and click **New Agent**. Pick the runtime you just connected and choose a provider (Claude Code, Codex, OpenClaw, OpenCode, Hermes, Gemini, Pi, or Cursor Agent). Give your agent a name — this is how it will appear on the board, in comments, and in assignments.
-
-### 4. Assign your first task
-
-Create an issue from the board (or via `multica issue create`), then assign it to your new agent. The agent will automatically pick up the task, execute it on your runtime, and report progress — just like a human teammate.
-
----
-
-## Multica vs Paperclip
-
-| | Multica | Paperclip |
-|---|---------|-----------|
-| **Focus** | Team AI agent collaboration platform | Solo AI agent company simulator |
-| **User model** | Multi-user teams with roles & permissions | Single board operator |
-| **Agent interaction** | Issues + Chat conversations | Issues + Heartbeat |
-| **Deployment** | Cloud-first | Local-first |
-| **Management depth** | Lightweight (Issues / Projects / Labels) | Heavy governance (Org chart / Approvals / Budgets) |
-| **Extensibility** | Skills system | Skills + Plugin system |
-
-**TL;DR — Multica is built for teams that want to collaborate with AI agents on real projects together.**
-
----
-
-## CLI
-
-The `multica` CLI connects your local machine to Multica — authenticate, manage workspaces, and run the agent daemon.
-
-| Command | Description |
-|---------|-------------|
-| `multica login` | Authenticate (opens browser) |
-| `multica daemon start` | Start the local agent runtime |
-| `multica daemon status` | Check daemon status |
-| `multica setup` | One-command setup for Multica Cloud (configure + login + start daemon) |
-| `multica setup self-host` | Same, but for self-hosted deployments |
-| `multica issue list` | List issues in your workspace |
-| `multica issue create` | Create a new issue |
-| `multica update` | Update to the latest version |
-
-See the [CLI and Daemon Guide](CLI_AND_DAEMON.md) for the full command reference.
-
----
-
-## Architecture
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
-│   Next.js    │────>│  Go Backend  │────>│   PostgreSQL     │
-│   Frontend   │<────│  (Chi + WS)  │<────│   (pgvector)     │
-└──────────────┘     └──────┬───────┘     └──────────────────┘
-                            │
-                     ┌──────┴───────┐
-                     │ Agent Daemon │  runs on your machine
-                     └──────────────┘  (Claude Code, Codex, OpenCode,
-                                        OpenClaw, Hermes, Gemini,
-                                        Pi, Cursor Agent)
-```
-
-| Layer | Stack |
-|-------|-------|
-| Frontend | Next.js 16 (App Router) |
-| Backend | Go (Chi router, sqlc, gorilla/websocket) |
-| Database | PostgreSQL 17 with pgvector |
-| Agent Runtime | Local daemon executing Claude Code, Codex, OpenClaw, OpenCode, Hermes, Gemini, Pi, or Cursor Agent |
-
-## Development
-
-For contributors working on the Multica codebase, see the [Contributing Guide](CONTRIBUTING.md).
-
-**Prerequisites:** [Node.js](https://nodejs.org/) v20+, [pnpm](https://pnpm.io/) v10.28+, [Go](https://go.dev/) v1.26+, [Docker](https://www.docker.com/)
+Use local development only when changing this template or testing upstream code changes before pushing to Railway.
 
 ```bash
 make dev
 ```
 
-`make dev` auto-detects your environment (main checkout or worktree), creates the env file, installs dependencies, sets up the database, runs migrations, and starts all services.
+`make dev` installs dependencies, prepares the database, runs migrations, and starts the backend and frontend for the current checkout.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow, worktree support, testing, and troubleshooting.
+Useful local checks:
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm lint
+make test
+```
+
+## Updating From Upstream
+
+This repository should stay close to upstream Multica while keeping Railway-specific files intact.
+
+Recommended update flow:
+
+1. Pull or merge changes from <https://github.com/multica-ai/multica>.
+2. Preserve files under `railway/` and this template README.
+3. Run `pnpm typecheck`, `pnpm test`, `pnpm lint`, and `make test`.
+4. Deploy to Railway staging or a temporary project first.
+5. Verify login, WebSocket updates, daemon connection, and issue assignment before updating production.
+
+## Verification
+
+Use these checks after deploy:
+
+```bash
+curl -sf https://<backend-domain>/health
+curl -sf https://<backend-domain>/readyz
+curl -I https://<frontend-domain>
+curl -I https://<frontend-domain>/docs
+multica daemon status
+```
+
+Expected result: backend health checks return `ok`, frontend responds, docs route loads, and the local daemon reports an active connection.
+
+## More Information
+
+- Original Multica repository: <https://github.com/multica-ai/multica>
+- Railway deployment details: [`railway/README.md`](railway/README.md)
+- Self-hosting details from upstream codebase: [`SELF_HOSTING.md`](SELF_HOSTING.md)
+- Contributor workflow: [`CONTRIBUTING.md`](CONTRIBUTING.md)
