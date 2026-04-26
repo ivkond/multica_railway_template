@@ -6,6 +6,17 @@ Multica is an open-source platform for building, managing, and orchestrating AI 
 
 Hosting Multica on Railway provides a robust, production-ready environment for your agent operations. This template automates the deployment of a three-tier architecture: a Go backend for high-performance API and WebSocket handling, a Next.js frontend for a seamless management interface, and a pgvector-enabled PostgreSQL database for long-term memory and semantic search. By hosting on Railway, you benefit from automatic SSL, private networking between services, and persistent volumes for agent logs and uploads, all without the overhead of manual server configuration or container orchestration.
 
+## Quick Start & Login
+
+Once your services are deployed:
+
+1. **Access the App**: Open the public domain generated for your `frontend` service.
+2. **First Login**: Enter your email address to receive a verification code.
+3. **Missing API Keys?**:
+   - **No Resend API Key**: If `RESEND_API_KEY` is not provided, you will not receive an email. Instead, open your Railway Dashboard, go to the `backend` service logs, and look for a line containing `"Verification code"`. Copy that code to log in.
+   - **No Google API Keys**: Social login will be unavailable. You must use the email code method described above.
+4. **Consequences**: Without these keys, your deployment is still fully functional, but "self-serve" signup is limited. Users will need you to provide their login codes from the logs until you configure a verified email sender.
+
 ## Common Use Cases
 
 - **Private AI Teammates:** Host persistent agents that interact with your private GitHub repositories and internal tools.
@@ -28,17 +39,6 @@ Hosting Multica on Railway provides a robust, production-ready environment for y
 Railway is a singular platform to deploy your infrastructure stack. Railway will host your infrastructure so you don't have to deal with configuration, while allowing you to vertically and horizontally scale it.
 
 By deploying Multica on Railway, you are one step closer to supporting a complete full-stack application with minimal burden. Host your servers, databases, AI agents, and more on Railway.
-
-## Quick Start & Login
-
-Once your services are deployed:
-
-1. **Access the App**: Open the public domain generated for your `frontend` service.
-2. **First Login**: Enter your email address to receive a verification code.
-3. **Missing API Keys?**:
-   - **No Resend API Key**: If `RESEND_API_KEY` is not provided, you will not receive an email. Instead, open your Railway Dashboard, go to the `backend` service logs, and look for a line containing `"Verification code"`. Copy that code to log in.
-   - **No Google API Keys**: Social login will be unavailable. You must use the email code method described above.
-4. **Consequences**: Without these keys, your deployment is still fully functional, but "self-serve" signup is limited. Users will need you to provide their login codes from the logs until you configure a verified email sender.
 
 ---
 
