@@ -1,11 +1,39 @@
-# Railway Deployment
+# Deploy and Host Multica on Railway
+
+Multica is an open-source platform for building, managing, and orchestrating AI agents that execute directly on your infrastructure. It provides a full-stack environment for agent communication, task management, and tool integration, allowing you to build persistent AI teammates that live where your code does.
+
+## About Hosting Multica
+
+Hosting Multica on Railway provides a robust, production-ready environment for your agent operations. This template automates the deployment of a three-tier architecture: a Go backend for high-performance API and WebSocket handling, a Next.js frontend for a seamless management interface, and a pgvector-enabled PostgreSQL database for long-term memory and semantic search. By hosting on Railway, you benefit from automatic SSL, private networking between services, and persistent volumes for agent logs and uploads, all without the overhead of manual server configuration or container orchestration.
+
+## Common Use Cases
+
+- **Private AI Teammates:** Host persistent agents that interact with your private GitHub repositories and internal tools.
+- **Self-Hosted Managed Agents:** Maintain full control over your agent data and execution environment for security-sensitive workflows.
+- **Custom Agent Workflows:** Use Multica as a foundation to build specialized agents for code review, automated testing, or data processing.
+
+## Dependencies for Multica Hosting
+
+- **Railway Account:** To provision the database, backend, and frontend services.
+- **GitHub Repository:** To source the code and trigger automatic redeployments on push.
+
+### Deployment Dependencies
+
+- [Upstream Repository](https://github.com/multica-ai/multica)
+- [Railway Documentation](https://docs.railway.app)
+- [pgvector Docker Image](https://hub.docker.com/r/pgvector/pgvector)
+
+## Why Deploy Multica on Railway?
+
+Railway is a singular platform to deploy your infrastructure stack. Railway will host your infrastructure so you don't have to deal with configuration, while allowing you to vertically and horizontally scale it.
+
+By deploying Multica on Railway, you are one step closer to supporting a complete full-stack application with minimal burden. Host your servers, databases, AI agents, and more on Railway.
+
+---
+
+# Railway Deployment Guide
 
 This directory contains service config files for deploying Multica on Railway as three services: `frontend`, `backend`, and `pgvector`.
-
-**Template Description:**
-Multica is an open-source platform for building, managing, and orchestrating AI agents that execute directly on your infrastructure. This template deploys the full stack: a Go backend, a Next.js frontend, and a pgvector-enabled PostgreSQL database.
-
-Template v1 uses the public Multica docs site for `/docs` via `DOCS_URL=https://multica.ai`. Add a separate docs service later only if the template must be fully self-contained.
 
 ## Services
 
