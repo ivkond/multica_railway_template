@@ -45,17 +45,21 @@ frontend config file path = /railway/frontend.railway.json
 | **DATABASE_MIN_CONNS** | The minimum number of idle connections to keep open in the database pool. |
 | **PORT** | The port on which the Go backend API will listen (usually 8080). |
 | **APP_ENV** | The execution environment (set to `production` for Railway). |
-| **JWT_SECRET** | Secret key used to sign and verify authentication tokens. |
+| **JWT_SECRET** | Secret key used to sign and verify authentication tokens (generate a secret). |
 | **FRONTEND_ORIGIN** | The public URL of your frontend service (used for CORS and auth redirects). |
 | **CORS_ALLOWED_ORIGINS** | Comma-separated list of origins allowed to make cross-site requests to the API. |
 | **MULTICA_APP_URL** | The primary public URL used to access the Multica application. |
 | **LOCAL_UPLOAD_DIR** | Path to the directory where uploaded assets and logs are stored. |
 | **LOCAL_UPLOAD_BASE_URL** | The base public URL used to serve locally uploaded files (usually the backend domain). |
-| **REALTIME_METRICS_TOKEN** | Secret token required to access the internal real-time performance metrics endpoint. |
+| **REALTIME_METRICS_TOKEN** | Secret token required to access the internal real-time performance metrics endpoint (generate a secret). |
 | **ANALYTICS_DISABLED** | Set to `true` to opt-out of telemetry and usage tracking. |
 | **ALLOW_SIGNUP** | Set to `true` to allow new users to register on this instance. |
 | **ALLOWED_EMAIL_DOMAINS** | Comma-separated list of email domains (e.g., `company.com`) allowed to sign up. |
 | **ALLOWED_EMAILS** | Comma-separated list of specific email addresses allowed to sign up. |
+| **RESEND_API_KEY** | API key for the Resend email delivery service (optional for local logs). |
+| **RESEND_FROM_EMAIL** | The verified sender email address for Resend notifications. |
+| **GOOGLE_CLIENT_ID** | The Google OAuth2 Client ID for social authentication. |
+| **GOOGLE_CLIENT_SECRET** | The Google OAuth2 Client Secret for social authentication. |
 | **GOOGLE_REDIRECT_URI** | The OAuth2 callback URL for Google login (must match your Google Cloud Console). |
 | **RAILWAY_DOCKERFILE_PATH** | Path to the Dockerfile used to build the backend service (usually `Dockerfile`). |
 
