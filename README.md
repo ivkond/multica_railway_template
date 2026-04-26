@@ -1,3 +1,5 @@
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/multica?referralCode=YqmMB-&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 # Multica Railway Template
 
 This repository is a deployable Railway template for [Multica](https://github.com/multica-ai/multica), the upstream open-source managed agents platform.
