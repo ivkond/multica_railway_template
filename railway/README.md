@@ -29,6 +29,17 @@ Railway is a singular platform to deploy your infrastructure stack. Railway will
 
 By deploying Multica on Railway, you are one step closer to supporting a complete full-stack application with minimal burden. Host your servers, databases, AI agents, and more on Railway.
 
+## Quick Start & Login
+
+Once your services are deployed:
+
+1. **Access the App**: Open the public domain generated for your `frontend` service.
+2. **First Login**: Enter your email address to receive a verification code.
+3. **Missing API Keys?**:
+   - **No Resend API Key**: If `RESEND_API_KEY` is not provided, you will not receive an email. Instead, open your Railway Dashboard, go to the `backend` service logs, and look for a line containing `"Verification code"`. Copy that code to log in.
+   - **No Google API Keys**: Social login will be unavailable. You must use the email code method described above.
+4. **Consequences**: Without these keys, your deployment is still fully functional, but "self-serve" signup is limited. Users will need you to provide their login codes from the logs until you configure a verified email sender.
+
 ---
 
 # Railway Deployment Guide
