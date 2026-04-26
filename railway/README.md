@@ -38,43 +38,125 @@ frontend config file path = /railway/frontend.railway.json
 
 ## Backend Variables
 
-| Variable | Template Value | Description |
-| :--- | :--- | :--- |
-| **DATABASE_URL** | `postgres://${{pgvector.POSTGRES_USER}}:${{pgvector.POSTGRES_PASSWORD}}@${{pgvector.RAILWAY_PRIVATE_DOMAIN}}:5432/${{pgvector.POSTGRES_DB}}?sslmode=disable` | The connection string for the PostgreSQL database (including credentials and domain). |
-| **DATABASE_MAX_CONNS** | `10` | The maximum number of simultaneous connections to the database. |
-| **DATABASE_MIN_CONNS** | `2` | The minimum number of idle connections to keep open in the database pool. |
-| **PORT** | `8080` | The port on which the Go backend API will listen (usually 8080). |
-| **APP_ENV** | `production` | The execution environment (set to `production` for Railway). |
-| **JWT_SECRET** | `${{secret(64, "abcdef0123456789")}}` | Secret key used to sign and verify authentication tokens (generate a secret). |
-| **FRONTEND_ORIGIN** | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` | The public URL of your frontend service (used for CORS and auth redirects). |
-| **CORS_ALLOWED_ORIGINS** | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` | Comma-separated list of origins allowed to make cross-site requests to the API. |
-| **MULTICA_APP_URL** | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}` | The primary public URL used to access the Multica application. |
-| **LOCAL_UPLOAD_DIR** | `/app/data/uploads` | Path to the directory where uploaded assets and logs are stored. |
-| **LOCAL_UPLOAD_BASE_URL** | `https://${{backend.RAILWAY_PUBLIC_DOMAIN}}` | The base public URL used to serve locally uploaded files (usually the backend domain). |
-| **REALTIME_METRICS_TOKEN** | `${{secret(64, "abcdef0123456789")}}` | Secret token required to access the internal real-time performance metrics endpoint (generate a secret). |
-| **ANALYTICS_DISABLED** | `true` | Set to `true` to opt-out of telemetry and usage tracking. |
-| **ALLOW_SIGNUP** | `true` | Set to `true` to allow new users to register on this instance. |
-| **ALLOWED_EMAIL_DOMAINS** | | Comma-separated list of email domains (e.g., `company.com`) allowed to sign up. |
-| **ALLOWED_EMAILS** | | Comma-separated list of specific email addresses allowed to sign up. |
-| **RESEND_API_KEY** | | API key for the Resend email delivery service (optional for local logs). |
-| **RESEND_FROM_EMAIL** | | The verified sender email address for Resend notifications. |
-| **GOOGLE_CLIENT_ID** | | The Google OAuth2 Client ID for social authentication. |
-| **GOOGLE_CLIENT_SECRET** | | The Google OAuth2 Client Secret for social authentication. |
-| **GOOGLE_REDIRECT_URI** | `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/auth/callback` | The OAuth2 callback URL for Google login (must match your Google Cloud Console). |
-| **RAILWAY_DOCKERFILE_PATH** | `Dockerfile` | Path to the Dockerfile used to build the backend service (usually `Dockerfile`). |
+```text
+VARIABLE: DATABASE_URL
+VALUE: postgres://${{pgvector.POSTGRES_USER}}:${{pgvector.POSTGRES_PASSWORD}}@${{pgvector.RAILWAY_PRIVATE_DOMAIN}}:5432/${{pgvector.POSTGRES_DB}}?sslmode=disable
+DESCRIPTION: The connection string for the PostgreSQL database (including credentials and domain).
+
+VARIABLE: DATABASE_MAX_CONNS
+VALUE: 10
+DESCRIPTION: The maximum number of simultaneous connections to the database.
+
+VARIABLE: DATABASE_MIN_CONNS
+VALUE: 2
+DESCRIPTION: The minimum number of idle connections to keep open in the database pool.
+
+VARIABLE: PORT
+VALUE: 8080
+DESCRIPTION: The port on which the Go backend API will listen (usually 8080).
+
+VARIABLE: APP_ENV
+VALUE: production
+DESCRIPTION: The execution environment (set to production for Railway).
+
+VARIABLE: JWT_SECRET
+VALUE: ${{secret(64, "abcdef0123456789")}}
+DESCRIPTION: Secret key used to sign and verify authentication tokens (generate a secret).
+
+VARIABLE: FRONTEND_ORIGIN
+VALUE: https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}
+DESCRIPTION: The public URL of your frontend service (used for CORS and auth redirects).
+
+VARIABLE: CORS_ALLOWED_ORIGINS
+VALUE: https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}
+DESCRIPTION: Comma-separated list of origins allowed to make cross-site requests to the API.
+
+VARIABLE: MULTICA_APP_URL
+VALUE: https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}
+DESCRIPTION: The primary public URL used to access the Multica application.
+
+VARIABLE: LOCAL_UPLOAD_DIR
+VALUE: /app/data/uploads
+DESCRIPTION: Path to the directory where uploaded assets and logs are stored.
+
+VARIABLE: LOCAL_UPLOAD_BASE_URL
+VALUE: https://${{backend.RAILWAY_PUBLIC_DOMAIN}}
+DESCRIPTION: The base public URL used to serve locally uploaded files (usually the backend domain).
+
+VARIABLE: REALTIME_METRICS_TOKEN
+VALUE: ${{secret(64, "abcdef0123456789")}}
+DESCRIPTION: Secret token required to access the internal real-time performance metrics endpoint (generate a secret).
+
+VARIABLE: ANALYTICS_DISABLED
+VALUE: true
+DESCRIPTION: Set to true to opt-out of telemetry and usage tracking.
+
+VARIABLE: ALLOW_SIGNUP
+VALUE: true
+DESCRIPTION: Set to true to allow new users to register on this instance.
+
+VARIABLE: ALLOWED_EMAIL_DOMAINS
+VALUE: 
+DESCRIPTION: Comma-separated list of email domains (e.g., company.com) allowed to sign up.
+
+VARIABLE: ALLOWED_EMAILS
+VALUE: 
+DESCRIPTION: Comma-separated list of specific email addresses allowed to sign up.
+
+VARIABLE: RESEND_API_KEY
+VALUE: 
+DESCRIPTION: API key for the Resend email delivery service (optional for local logs).
+
+VARIABLE: RESEND_FROM_EMAIL
+VALUE: 
+DESCRIPTION: The verified sender email address for Resend notifications.
+
+VARIABLE: GOOGLE_CLIENT_ID
+VALUE: 
+DESCRIPTION: The Google OAuth2 Client ID for social authentication.
+
+VARIABLE: GOOGLE_CLIENT_SECRET
+VALUE: 
+DESCRIPTION: The Google OAuth2 Client Secret for social authentication.
+
+VARIABLE: GOOGLE_REDIRECT_URI
+VALUE: https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/auth/callback
+DESCRIPTION: The OAuth2 callback URL for Google login (must match your Google Cloud Console).
+
+VARIABLE: RAILWAY_DOCKERFILE_PATH
+VALUE: Dockerfile
+DESCRIPTION: Path to the Dockerfile used to build the backend service (usually Dockerfile).
+```
 
 Mount `backend-volume` at `/app/data/uploads`. Keep the backend at one replica while using local volume uploads; use S3-compatible object storage and a CDN before scaling replicas.
 
 ## Frontend Variables
 
-| Variable | Template Value | Description |
-| :--- | :--- | :--- |
-| **PORT** | `3000` | The port on which the Next.js server will listen (usually 3000). |
-| **HOSTNAME** | `0.0.0.0` | The network interface the server binds to (set to `0.0.0.0` for Railway). |
-| **REMOTE_API_URL** | `http://${{backend.RAILWAY_PRIVATE_DOMAIN}}:8080` | The internal Railway URL used by the frontend to proxy requests to the backend. |
-| **NEXT_PUBLIC_APP_VERSION** | `railway-template` | A version identifier for the frontend build (e.g., `railway-template`). |
-| **DOCS_URL** | `https://multica.ai` | The URL where the application documentation is hosted (defaults to `https://multica.ai`). |
-| **RAILWAY_DOCKERFILE_PATH** | `Dockerfile.web` | Path to the Dockerfile used to build the web service (usually `Dockerfile.web`). |
+```text
+VARIABLE: PORT
+VALUE: 3000
+DESCRIPTION: The port on which the Next.js server will listen (usually 3000).
+
+VARIABLE: HOSTNAME
+VALUE: 0.0.0.0
+DESCRIPTION: The network interface the server binds to (set to 0.0.0.0 for Railway).
+
+VARIABLE: REMOTE_API_URL
+VALUE: http://${{backend.RAILWAY_PRIVATE_DOMAIN}}:8080
+DESCRIPTION: The internal Railway URL used by the frontend to proxy requests to the backend.
+
+VARIABLE: NEXT_PUBLIC_APP_VERSION
+VALUE: railway-template
+DESCRIPTION: A version identifier for the frontend build (e.g., railway-template).
+
+VARIABLE: DOCS_URL
+VALUE: https://multica.ai
+DESCRIPTION: The URL where the application documentation is hosted (defaults to https://multica.ai).
+
+VARIABLE: RAILWAY_DOCKERFILE_PATH
+VALUE: Dockerfile.web
+DESCRIPTION: Path to the Dockerfile used to build the web service (usually Dockerfile.web).
+```
 
 Leave `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` unset for the web service. The browser uses same-origin `/api`, `/auth`, and `/ws` routes, and Next.js rewrites proxy those requests to `REMOTE_API_URL`. This keeps cookie auth on the frontend origin for Railway public domains.
 
