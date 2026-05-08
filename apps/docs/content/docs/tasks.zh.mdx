@@ -63,6 +63,8 @@ Multica 服务器每 30 秒扫描一次，有两种超时会触发失败：
 
 <Callout type="warning">
 **Autopilots 任务不自动重试**是刻意设计。Autopilot 有自己的触发周期（例如每天一次）；如果失败又自动重试，会和下一个周期的任务重叠。需要失败后立即重跑，用手动重跑（下一节）。
+
+**怎么知道 Autopilot 失败了**：失败的 Autopilot 任务会在你的 [收件箱](/inbox) 里出现一条通知，关联的 issue 状态也会从 `in_progress` 退回 `todo`。直接打开 [Autopilots](/autopilots) 页面也能看到每条 autopilot 的最近运行结果。
 </Callout>
 
 ## 手动重跑和自动重试的区别
@@ -100,7 +102,7 @@ Multica 在任务过程中**两次**保存会话 ID——任务一开始（AI �
 
 但**哪些 AI 编程工具真的支持**差别很大：
 
-- ✅ **真支持**——Claude Code、Copilot、Hermes、Kimi、OpenCode、OpenClaw、Pi
+- ✅ **真支持**——Claude Code、Copilot、Hermes、Kimi、Kiro CLI、OpenCode、OpenClaw、Pi
 - ⚠️ **代码看起来支持但实际不可用**——Codex、Cursor
 - ❌ **不支持**——Gemini
 
@@ -108,5 +110,5 @@ Multica 在任务过程中**两次**保存会话 ID——任务一开始（AI �
 
 ## 下一步
 
-- [Providers Matrix](/providers) —— 10 款 AI 编程工具的能力差异对照（包括会话恢复的精确状态）
+- [Providers Matrix](/providers) —— 11 款 AI 编程工具的能力差异对照（包括会话恢复的精确状态）
 - [分配 issue 给智能体](/assigning-issues) / [在评论里 @智能体](/mentioning-agents) / [聊天](/chat) / [Autopilots](/autopilots) —— 触发执行任务的四种方式
