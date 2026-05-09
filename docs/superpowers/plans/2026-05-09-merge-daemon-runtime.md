@@ -81,16 +81,7 @@ Expected: each command exits `0`.
 
 - [ ] **Step 1: Update Dockerfile script copy paths**
 
-Replace:
-
-```dockerfile
-COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY scripts/setup_multica.sh /usr/local/bin/setup_multica.sh
-COPY scripts/setup_agent.sh /usr/local/bin/setup_agent.sh
-COPY scripts/health_proxy.py /usr/local/bin/health_proxy.py
-```
-
-With:
+Use explicit paths from the repository root:
 
 ```dockerfile
 COPY railway/daemon/scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -112,7 +103,10 @@ Set `railway/daemon/railway.json` to:
   },
   "deploy": {
     "healthcheckPath": "/health",
-    "requiredMountPath": "/data"
+    "healthcheckTimeout": 300,
+    "requiredMountPath": "/data",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
@@ -122,7 +116,7 @@ Set `railway/daemon/railway.json` to:
 Run:
 
 ```powershell
-rg "COPY scripts/" railway\daemon\Dockerfile
+rg ('COPY ' + 'scripts/') railway\daemon\Dockerfile
 rg "COPY railway/daemon/scripts/(entrypoint.sh|setup_multica.sh|setup_agent.sh|health_proxy.py)" railway\daemon\Dockerfile
 ```
 
@@ -176,7 +170,7 @@ Add daemon sections for:
 ### Daemon Volumes And Networking
 ```
 
-Expected: docs state daemon public networking is disabled by default, each daemon service needs `/data`, backend production uploads need `/app/data/uploads`, and post-deploy verification includes both Railway daemon services.
+Expected: docs state daemon public networking is disabled by default, each daemon service needs `/data`, backend production uploads need `/app/data/uploads`, OpenCode provider keys are configured through per-agent `custom_env`, and post-deploy verification includes both Railway daemon services.
 
 ## Task 4: Validate
 
@@ -211,13 +205,13 @@ Expected: exits `0`; if local Python is unavailable, record that explicitly.
 Run `daemon-opencode`:
 
 ```powershell
-docker build --platform linux/amd64 -f railway/daemon/Dockerfile --build-arg AGENT=opencode --build-arg MULTICA_VERSION=v0.2.27 --build-arg NODE_VERSION=22.15.0 --build-arg PNPM_VERSION=10.10.0 --build-arg INFISICAL_CLI_VERSION=0.43.82 --build-arg OPENCODE_VERSION=1.14.41 --build-arg OPENCODE_SHA256_X64=d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5 --build-arg OPENCODE_SHA256_ARM64=2ffa63bb6115d7aa193cb1f6fa766eb79e1b399776871a624935a752e4461105 -t multica-daemon:opencode .
+docker build --platform linux/amd64 -f railway/daemon/Dockerfile --build-arg AGENT=opencode --build-arg MULTICA_VERSION=v0.2.28 --build-arg NODE_VERSION=22.15.0 --build-arg PNPM_VERSION=10.10.0 --build-arg INFISICAL_CLI_VERSION=0.43.82 --build-arg OPENCODE_VERSION=1.14.41 --build-arg OPENCODE_SHA256_X64=d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5 -t multica-daemon:opencode .
 ```
 
 Run `daemon-codex`:
 
 ```powershell
-docker build --platform linux/amd64 -f railway/daemon/Dockerfile --build-arg AGENT=codex --build-arg MULTICA_VERSION=v0.2.27 --build-arg NODE_VERSION=22.15.0 --build-arg PNPM_VERSION=10.10.0 --build-arg INFISICAL_CLI_VERSION=0.43.82 --build-arg CODEX_VERSION=0.128.0 -t multica-daemon:codex .
+docker build --platform linux/amd64 -f railway/daemon/Dockerfile --build-arg AGENT=codex --build-arg MULTICA_VERSION=v0.2.28 --build-arg NODE_VERSION=22.15.0 --build-arg PNPM_VERSION=10.10.0 --build-arg INFISICAL_CLI_VERSION=0.43.82 --build-arg CODEX_VERSION=0.128.0 -t multica-daemon:codex .
 ```
 
 Expected: both builds complete. If Docker is unavailable or too slow locally, run equivalent Railway builds before switching production source settings.

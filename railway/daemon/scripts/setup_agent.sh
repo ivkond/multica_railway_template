@@ -64,10 +64,12 @@ EOF
 }
 
 setup_opencode() {
-  require_env "OPENCODE_HOME"
+  require_env "OPENCODE_CONFIG_DIR"
+  require_env "XDG_CONFIG_HOME"
+  require_env "XDG_DATA_HOME"
 
-  mkdir -p "$OPENCODE_HOME"
-  chmod 700 "$OPENCODE_HOME"
+  mkdir -p "$OPENCODE_CONFIG_DIR" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"
+  chmod 700 "$OPENCODE_CONFIG_DIR" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"
 
   opencode --version
 }

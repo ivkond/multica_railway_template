@@ -15,6 +15,8 @@ Supported MVP runtimes:
 
 Public networking should stay disabled for daemon services. Railway can run the `/health` healthcheck without assigning a public domain, and the daemon does not expose user-facing routes.
 
+Daemon services use `restartPolicyType=ON_FAILURE` with `restartPolicyMaxRetries=10`.
+
 ## Build Variables
 
 Build variables are evaluated while Railway builds the image. Do not put tokens or credentials in build variables.
@@ -23,20 +25,19 @@ Build variables are evaluated while Railway builds the image. Do not put tokens 
 
 ```dotenv
 AGENT=opencode
-MULTICA_VERSION=v0.2.27
+MULTICA_VERSION=v0.2.28
 NODE_VERSION=22.15.0
 PNPM_VERSION=10.10.0
 INFISICAL_CLI_VERSION=0.43.82
 OPENCODE_VERSION=1.14.41
 OPENCODE_SHA256_X64=d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5
-OPENCODE_SHA256_ARM64=2ffa63bb6115d7aa193cb1f6fa766eb79e1b399776871a624935a752e4461105
 ```
 
 `daemon-codex`:
 
 ```dotenv
 AGENT=codex
-MULTICA_VERSION=v0.2.27
+MULTICA_VERSION=v0.2.28
 NODE_VERSION=22.15.0
 PNPM_VERSION=10.10.0
 INFISICAL_CLI_VERSION=0.43.82
@@ -44,6 +45,8 @@ CODEX_VERSION=0.128.0
 ```
 
 The MVP build target is `linux/amd64`. The Dockerfile downloads Linux x64 Node.js and amd64 Multica release assets, so build and run daemon services on `linux/amd64` until architecture mapping is added for all downloaded binaries.
+
+The Dockerfile fail-fast rejects non-`amd64` build targets.
 
 ## Runtime Variables
 
@@ -128,6 +131,16 @@ codex login --device-auth
 base64 -w 0 /tmp/codex-bootstrap/auth.json
 ```
 
+OpenCode provider credentials are configured per agent in Multica `custom_env`, not in the daemon Infisical path. For example, set one or more of:
+
+```dotenv
+ANTHROPIC_API_KEY=sk-ant-provider-key
+OPENAI_API_KEY=sk-provider-key
+GOOGLE_API_KEY=provider-key
+```
+
+Multica injects agent `custom_env` into the spawned OpenCode process. Do not put provider keys in Docker build variables.
+
 ## Volumes
 
 Each daemon service must mount one Railway volume at `/data`.
@@ -139,7 +152,9 @@ The runtime uses:
 | `/data/workspaces` | cloned task repositories and worktrees |
 | `/data/home` | managed home directory, `.netrc`, and `.git-credentials` |
 | `/data/codex` | Codex subscription auth state |
-| `/data/opencode` | OpenCode runtime state |
+| `/data/opencode/config` | OpenCode config directory via `OPENCODE_CONFIG_DIR` |
+| `/data/opencode/data` | OpenCode data/auth directory via `XDG_DATA_HOME` |
+| `/data/opencode/xdg-config` | XDG config root via `XDG_CONFIG_HOME` |
 
 `railway/daemon/railway.json` declares `requiredMountPath: "/data"` so Railway refuses deploys without the mounted volume. The config does not create the volume; attach it in Railway service settings.
 
@@ -152,13 +167,12 @@ OpenCode:
 ```bash
 docker build --platform linux/amd64 -f railway/daemon/Dockerfile \
   --build-arg AGENT=opencode \
-  --build-arg MULTICA_VERSION=v0.2.27 \
+  --build-arg MULTICA_VERSION=v0.2.28 \
   --build-arg NODE_VERSION=22.15.0 \
   --build-arg PNPM_VERSION=10.10.0 \
   --build-arg INFISICAL_CLI_VERSION=0.43.82 \
   --build-arg OPENCODE_VERSION=1.14.41 \
   --build-arg OPENCODE_SHA256_X64=d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5 \
-  --build-arg OPENCODE_SHA256_ARM64=2ffa63bb6115d7aa193cb1f6fa766eb79e1b399776871a624935a752e4461105 \
   -t multica-daemon:opencode .
 ```
 
@@ -167,7 +181,7 @@ Codex:
 ```bash
 docker build --platform linux/amd64 -f railway/daemon/Dockerfile \
   --build-arg AGENT=codex \
-  --build-arg MULTICA_VERSION=v0.2.27 \
+  --build-arg MULTICA_VERSION=v0.2.28 \
   --build-arg NODE_VERSION=22.15.0 \
   --build-arg PNPM_VERSION=10.10.0 \
   --build-arg INFISICAL_CLI_VERSION=0.43.82 \

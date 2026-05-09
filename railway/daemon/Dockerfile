@@ -9,11 +9,14 @@ ARG INFISICAL_CLI_VERSION
 ARG CODEX_VERSION
 ARG OPENCODE_VERSION
 ARG OPENCODE_SHA256_X64
-ARG OPENCODE_SHA256_ARM64
 
 ENV PATH="/usr/local/lib/nodejs/bin:${PATH}"
 
 RUN set -eu; \
+  case "${TARGETARCH:-amd64}" in \
+    amd64) ;; \
+    *) printf 'Dockerfile: unsupported TARGETARCH "%s"; daemon image currently supports linux/amd64 only\n' "${TARGETARCH:-}" >&2; exit 1 ;; \
+  esac; \
   test -n "$AGENT" || { printf 'Dockerfile: missing required build arg AGENT; expected codex or opencode\n' >&2; exit 1; }; \
   test -n "$MULTICA_VERSION" || { printf 'Dockerfile: missing required build arg MULTICA_VERSION\n' >&2; exit 1; }; \
   test -n "$NODE_VERSION" || { printf 'Dockerfile: missing required build arg NODE_VERSION\n' >&2; exit 1; }; \
@@ -23,8 +26,7 @@ RUN set -eu; \
     codex) test -n "$CODEX_VERSION" || { printf 'Dockerfile: missing required build arg CODEX_VERSION for AGENT=codex\n' >&2; exit 1; } ;; \
     opencode) \
       test -n "$OPENCODE_VERSION" || { printf 'Dockerfile: missing required build arg OPENCODE_VERSION for AGENT=opencode\n' >&2; exit 1; }; \
-      test -n "$OPENCODE_SHA256_X64" || { printf 'Dockerfile: missing required build arg OPENCODE_SHA256_X64 for AGENT=opencode\n' >&2; exit 1; }; \
-      test -n "$OPENCODE_SHA256_ARM64" || { printf 'Dockerfile: missing required build arg OPENCODE_SHA256_ARM64 for AGENT=opencode\n' >&2; exit 1; } ;; \
+      test -n "$OPENCODE_SHA256_X64" || { printf 'Dockerfile: missing required build arg OPENCODE_SHA256_X64 for AGENT=opencode\n' >&2; exit 1; } ;; \
     *) printf 'Dockerfile: unsupported AGENT "%s"; expected codex or opencode\n' "$AGENT" >&2; exit 1 ;; \
   esac
 
@@ -88,11 +90,8 @@ RUN set -eux; \
   case "$AGENT" in \
     codex) npm install -g "@openai/codex@${CODEX_VERSION}" && codex --version ;; \
     opencode) \
-      case "${TARGETARCH:-amd64}" in \
-        amd64) opencode_asset="opencode-linux-x64.tar.gz"; opencode_sha256="$OPENCODE_SHA256_X64" ;; \
-        arm64) opencode_asset="opencode-linux-arm64.tar.gz"; opencode_sha256="$OPENCODE_SHA256_ARM64" ;; \
-        *) printf 'Dockerfile: unsupported TARGETARCH "%s" for OpenCode\n' "${TARGETARCH:-}" >&2; exit 1 ;; \
-      esac; \
+      opencode_asset="opencode-linux-x64.tar.gz"; \
+      opencode_sha256="$OPENCODE_SHA256_X64"; \
       curl -fsSLo /tmp/opencode.tar.gz "https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/${opencode_asset}" || { printf 'Dockerfile: failed to download OpenCode release asset for %s\n' "$OPENCODE_VERSION" >&2; exit 1; }; \
       printf '%s  /tmp/opencode.tar.gz\n' "$opencode_sha256" | sha256sum -c - || { printf 'Dockerfile: OpenCode release asset checksum mismatch for %s\n' "$OPENCODE_VERSION" >&2; exit 1; }; \
       mkdir -p /tmp/opencode; \

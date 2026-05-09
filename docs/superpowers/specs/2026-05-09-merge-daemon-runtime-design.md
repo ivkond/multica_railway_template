@@ -62,7 +62,10 @@ The daemon Railway service will use config file path:
   },
   "deploy": {
     "healthcheckPath": "/health",
-    "requiredMountPath": "/data"
+    "healthcheckTimeout": 300,
+    "requiredMountPath": "/data",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
   }
 }
 ```
@@ -72,6 +75,8 @@ The daemon Dockerfile will copy scripts from `railway/daemon/scripts/`, not from
 `requiredMountPath` is an expected Railway config guard for daemon services. It does not create the Railway volume by itself; operators still must attach one volume per daemon service at `/data`.
 
 The MVP daemon build target is `linux/amd64`. The copied Dockerfile currently downloads `node-v${NODE_VERSION}-linux-x64.tar.xz` and `multica_linux_amd64.tar.gz`, so Railway daemon services must build and run on `linux/amd64` until the Dockerfile maps `TARGETARCH` consistently for Node.js and Multica release assets. `linux/arm64` support can be added later by introducing explicit asset mapping and checksum validation for every downloaded binary.
+
+The daemon Dockerfile must fail fast for non-`amd64` `TARGETARCH` values before downloading x64-only release assets.
 
 ## Runtime Services
 
@@ -99,7 +104,7 @@ Common build variable names required for every daemon image:
 
 ```dotenv
 AGENT=codex_or_opencode
-MULTICA_VERSION=v0.2.27
+MULTICA_VERSION=v0.2.28
 NODE_VERSION=22.15.0
 PNPM_VERSION=10.10.0
 INFISICAL_CLI_VERSION=0.43.82
@@ -109,20 +114,19 @@ Complete `daemon-opencode` build variables:
 
 ```dotenv
 AGENT=opencode
-MULTICA_VERSION=v0.2.27
+MULTICA_VERSION=v0.2.28
 NODE_VERSION=22.15.0
 PNPM_VERSION=10.10.0
 INFISICAL_CLI_VERSION=0.43.82
 OPENCODE_VERSION=1.14.41
 OPENCODE_SHA256_X64=d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5
-OPENCODE_SHA256_ARM64=2ffa63bb6115d7aa193cb1f6fa766eb79e1b399776871a624935a752e4461105
 ```
 
 Complete `daemon-codex` build variables:
 
 ```dotenv
 AGENT=codex
-MULTICA_VERSION=v0.2.27
+MULTICA_VERSION=v0.2.28
 NODE_VERSION=22.15.0
 PNPM_VERSION=10.10.0
 INFISICAL_CLI_VERSION=0.43.82
@@ -197,6 +201,8 @@ CODEX_AUTH_JSON_B64=base64_encoded_codex_auth_json
 
 `CODEX_AUTH_JSON_B64` is required only for `AGENT=codex`. `GITHUB_TOKEN` is optional and is used only for private GitHub HTTPS clones.
 
+OpenCode provider credentials are an agent-level concern in MVP. Configure provider API keys in Multica agent `custom_env`, for example `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GOOGLE_API_KEY`. The daemon Infisical path stores daemon bootstrap credentials, not provider keys.
+
 ## Persistence
 
 Daemon services must mount a Railway volume at `/data`.
@@ -206,7 +212,9 @@ The runtime uses `/data` for:
 - `/data/workspaces`: cloned task repositories and task worktrees;
 - `/data/home`: managed home directory, `.netrc`, and `.git-credentials`;
 - `/data/codex`: Codex subscription auth state;
-- `/data/opencode`: OpenCode runtime state.
+- `/data/opencode/config`: OpenCode config directory via `OPENCODE_CONFIG_DIR`;
+- `/data/opencode/data`: OpenCode data and auth directory via `XDG_DATA_HOME`;
+- `/data/opencode/xdg-config`: XDG config root via `XDG_CONFIG_HOME`.
 
 Startup must reject `MULTICA_WORKSPACES_ROOT` values that are outside `/data` or overlap `/data/home`, `/data/codex`, or `/data/opencode`.
 
@@ -277,9 +285,9 @@ It will not add new runtime providers beyond Codex and OpenCode.
 5. Patch daemon paths in Dockerfile and Railway config:
    - `railway/daemon/railway.json` uses `dockerfilePath: "railway/daemon/Dockerfile"`;
    - `railway/daemon/railway.json` includes `requiredMountPath: "/data"`;
-   - Dockerfile legacy `COPY scripts/` statements become explicit copy statements under `railway/daemon/scripts/`.
+   - Dockerfile legacy bare `scripts/` copy statements become explicit copy statements under `railway/daemon/scripts/`.
 6. Verify the path patch:
-   - `rg 'COPY scripts/' railway/daemon/Dockerfile` returns no matches;
+   - `rg ('COPY ' + 'scripts/') railway/daemon/Dockerfile` returns no matches;
    - `rg 'COPY railway/daemon/scripts/(entrypoint.sh|setup_multica.sh|setup_agent.sh|health_proxy.py)' railway/daemon/Dockerfile` finds all four copied runtime files.
 7. Update root and Railway docs:
    - root `README.md` describes the full Railway stack;
@@ -300,13 +308,12 @@ It will not add new runtime providers beyond Codex and OpenCode.
    ```bash
    docker build --platform linux/amd64 -f railway/daemon/Dockerfile \
      --build-arg AGENT=opencode \
-     --build-arg MULTICA_VERSION=v0.2.27 \
+     --build-arg MULTICA_VERSION=v0.2.28 \
      --build-arg NODE_VERSION=22.15.0 \
      --build-arg PNPM_VERSION=10.10.0 \
      --build-arg INFISICAL_CLI_VERSION=0.43.82 \
      --build-arg OPENCODE_VERSION=1.14.41 \
      --build-arg OPENCODE_SHA256_X64=d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5 \
-     --build-arg OPENCODE_SHA256_ARM64=2ffa63bb6115d7aa193cb1f6fa766eb79e1b399776871a624935a752e4461105 \
      -t multica-daemon:opencode .
    ```
 
@@ -315,7 +322,7 @@ It will not add new runtime providers beyond Codex and OpenCode.
    ```bash
    docker build --platform linux/amd64 -f railway/daemon/Dockerfile \
      --build-arg AGENT=codex \
-     --build-arg MULTICA_VERSION=v0.2.27 \
+     --build-arg MULTICA_VERSION=v0.2.28 \
      --build-arg NODE_VERSION=22.15.0 \
      --build-arg PNPM_VERSION=10.10.0 \
      --build-arg INFISICAL_CLI_VERSION=0.43.82 \
@@ -341,12 +348,15 @@ The merge is complete when all of these are true:
 - `ivkond/multica_railway_template` contains daemon runtime files under `railway/daemon/`.
 - `railway/daemon/railway.json` builds from `railway/daemon/Dockerfile`.
 - `railway/daemon/railway.json` declares `requiredMountPath: "/data"`.
-- The daemon Dockerfile contains script copy paths under `railway/daemon/scripts/` and no old `COPY scripts/` paths.
+- `railway/daemon/railway.json` declares `restartPolicyType: "ON_FAILURE"` and `restartPolicyMaxRetries: 10`.
+- The daemon Dockerfile contains script copy paths under `railway/daemon/scripts/` and no old bare `scripts/` copy paths.
+- The daemon Dockerfile rejects non-`amd64` build targets before downloading x64-only release assets.
 - Daemon build and runtime architecture is explicitly `linux/amd64` for MVP.
 - Existing backend and frontend Railway configs remain unchanged except documentation references.
 - Daemon startup still supports both `AGENT=codex` and `AGENT=opencode`.
 - `daemon-opencode` and `daemon-codex` each have documented build-variable blocks separate from runtime-variable blocks.
 - Daemon startup fetches `MULTICA_TOKEN`, optional `GITHUB_TOKEN`, and Codex-only `CODEX_AUTH_JSON_B64` from Infisical.
+- OpenCode provider auth requirements are documented as per-agent `custom_env` configuration.
 - Runtime state is persisted only under `/data`.
 - Backend uploads production persistence is documented as a Railway volume at `/app/data/uploads`.
 - Daemon public networking is disabled by default, with the enablement tradeoff documented.

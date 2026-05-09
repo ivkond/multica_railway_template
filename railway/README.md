@@ -92,6 +92,7 @@ Keep the backend at one replica while uploads are stored on a Railway volume. Mo
 - Keep Railway healthcheck path `/health`.
 - Mount one dedicated Railway volume per daemon service at `/data`.
 - Build and run daemon services on `linux/amd64` for MVP.
+- Restart daemon services on failure with `ON_FAILURE` and `restartPolicyMaxRetries=10`.
 - Store daemon runtime credentials in Infisical, not in build variables.
 
 The daemon config includes `requiredMountPath: "/data"`, which prevents deploys without a mounted volume. It does not create the volume.
@@ -147,13 +148,12 @@ PGDATA="/var/lib/postgresql/data/pgdata" # The internal path within the volume w
 ### Daemon OpenCode Build Variables
 ```bash
 AGENT="opencode" # Build the OpenCode runtime variant.
-MULTICA_VERSION="v0.2.27" # Multica CLI release version.
+MULTICA_VERSION="v0.2.28" # Multica CLI release version; keep aligned with this template release.
 NODE_VERSION="22.15.0" # Node.js version used for npm-installed tools.
 PNPM_VERSION="10.10.0" # pnpm version activated through Corepack.
 INFISICAL_CLI_VERSION="0.43.82" # Infisical CLI npm package version.
 OPENCODE_VERSION="1.14.41" # OpenCode release version.
 OPENCODE_SHA256_X64="d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5" # SHA-256 for opencode-linux-x64.tar.gz.
-OPENCODE_SHA256_ARM64="2ffa63bb6115d7aa193cb1f6fa766eb79e1b399776871a624935a752e4461105" # SHA-256 for opencode-linux-arm64.tar.gz.
 ```
 
 ### Daemon OpenCode Runtime Variables
@@ -177,7 +177,7 @@ LOG_LEVEL="info" # Suppresses noisy debug-level wakeup messages.
 ### Daemon Codex Build Variables
 ```bash
 AGENT="codex" # Build the Codex runtime variant.
-MULTICA_VERSION="v0.2.27" # Multica CLI release version.
+MULTICA_VERSION="v0.2.28" # Multica CLI release version; keep aligned with this template release.
 NODE_VERSION="22.15.0" # Node.js version used for npm-installed tools.
 PNPM_VERSION="10.10.0" # pnpm version activated through Corepack.
 INFISICAL_CLI_VERSION="0.43.82" # Infisical CLI npm package version.
@@ -201,6 +201,8 @@ MULTICA_WORKSPACES_ROOT="/data/workspaces" # Persistent workspace root under the
 PORT="8080" # Railway health proxy port.
 LOG_LEVEL="info" # Suppresses noisy debug-level wakeup messages.
 ```
+
+OpenCode provider credentials are not loaded from the daemon Infisical path in this MVP. Configure provider API keys per agent in Multica `custom_env`, for example `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GOOGLE_API_KEY`. These values are injected only into the spawned agent CLI process.
 
 Leave `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` unset for the web service. The browser uses same-origin `/api`, `/auth`, and `/ws` routes, and Next.js rewrites proxy those requests to `REMOTE_API_URL`. This keeps cookie auth on the frontend origin for Railway public domains.
 

@@ -25,6 +25,6 @@ printf 'setup_multica: configuring Multica CLI\n' >&2
 multica --version
 multica config set server_url "$MULTICA_SERVER_URL"
 multica config set app_url "$MULTICA_APP_URL"
-multica login --token "$multica_token"
+printf '%s\n' "$multica_token" | multica login --token
 unset multica_token
 printf 'setup_multica: Multica login completed\n' >&2

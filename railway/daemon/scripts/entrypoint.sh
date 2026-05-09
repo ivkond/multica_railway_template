@@ -4,7 +4,7 @@ set +x
 
 readonly DATA_ROOT="/data"
 readonly DEFAULT_CODEX_HOME="/data/codex"
-readonly DEFAULT_OPENCODE_HOME="/data/opencode"
+readonly DEFAULT_OPENCODE_ROOT="/data/opencode"
 readonly INFISICAL_RETRY_COUNT=3
 readonly INFISICAL_RETRY_DELAY_SECONDS=2
 
@@ -52,8 +52,13 @@ fi
 
 export HOME="/data/home"
 export CODEX_HOME="$DEFAULT_CODEX_HOME"
-export OPENCODE_HOME="$DEFAULT_OPENCODE_HOME"
 export MULTICA_WORKSPACES_ROOT="${MULTICA_WORKSPACES_ROOT}"
+
+if [[ "$AGENT" == "opencode" ]]; then
+  export OPENCODE_CONFIG_DIR="${DEFAULT_OPENCODE_ROOT}/config"
+  export XDG_CONFIG_HOME="${DEFAULT_OPENCODE_ROOT}/xdg-config"
+  export XDG_DATA_HOME="${DEFAULT_OPENCODE_ROOT}/data"
+fi
 
 normalized_workspaces_root="$(realpath -m -- "$MULTICA_WORKSPACES_ROOT")"
 case "$normalized_workspaces_root" in
@@ -71,12 +76,12 @@ case "$normalized_workspaces_root" in
     ;;
 esac
 
-mkdir -p "$HOME" "$MULTICA_WORKSPACES_ROOT" "$CODEX_HOME" "$OPENCODE_HOME"
-chmod 700 "$HOME" "$MULTICA_WORKSPACES_ROOT" "$CODEX_HOME" "$OPENCODE_HOME"
+mkdir -p "$HOME" "$MULTICA_WORKSPACES_ROOT" "$CODEX_HOME" "$DEFAULT_OPENCODE_ROOT"
+chmod 700 "$HOME" "$MULTICA_WORKSPACES_ROOT" "$CODEX_HOME" "$DEFAULT_OPENCODE_ROOT"
 [[ -w "$HOME" ]] || die "HOME is not writable"
 [[ -w "$MULTICA_WORKSPACES_ROOT" ]] || die "MULTICA_WORKSPACES_ROOT is not writable"
 [[ -w "$CODEX_HOME" ]] || die "CODEX_HOME is not writable"
-[[ -w "$OPENCODE_HOME" ]] || die "OPENCODE_HOME is not writable"
+[[ -w "$DEFAULT_OPENCODE_ROOT" ]] || die "OPENCODE root is not writable"
 
 command -v infisical >/dev/null 2>&1 || die "infisical CLI is required"
 command -v jq >/dev/null 2>&1 || die "jq is required"
