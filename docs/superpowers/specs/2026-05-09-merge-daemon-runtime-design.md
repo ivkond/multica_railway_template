@@ -78,6 +78,8 @@ The MVP daemon build target is `linux/amd64`. The copied Dockerfile currently do
 
 The daemon Dockerfile must fail fast for non-`amd64` `TARGETARCH` values before downloading x64-only release assets.
 
+The daemon image must run as a non-root runtime user. The MVP runtime user is `multica` with UID/GID `10001`, and the `/data` volume must be writable by that user.
+
 ## Runtime Services
 
 The Railway project should contain these service classes:
@@ -351,6 +353,7 @@ The merge is complete when all of these are true:
 - `railway/daemon/railway.json` declares `restartPolicyType: "ON_FAILURE"` and `restartPolicyMaxRetries: 10`.
 - The daemon Dockerfile contains script copy paths under `railway/daemon/scripts/` and no old bare `scripts/` copy paths.
 - The daemon Dockerfile rejects non-`amd64` build targets before downloading x64-only release assets.
+- The daemon Dockerfile runs the final image as non-root user `multica`.
 - Daemon build and runtime architecture is explicitly `linux/amd64` for MVP.
 - Existing backend and frontend Railway configs remain unchanged except documentation references.
 - Daemon startup still supports both `AGENT=codex` and `AGENT=opencode`.

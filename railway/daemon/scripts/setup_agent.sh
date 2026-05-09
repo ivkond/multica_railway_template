@@ -3,7 +3,8 @@ set -euo pipefail
 set +x
 
 die() {
-  printf 'setup_agent: %s\n' "$1" >&2
+  local message="$1"
+  printf 'setup_agent: %s\n' "$message" >&2
   exit 1
 }
 

@@ -18,7 +18,7 @@ def health_status_from_target(target_url: str, timeout_seconds: float) -> tuple[
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
             payload = json.loads(response.read().decode("utf-8"))
-    except (OSError, ValueError, json.JSONDecodeError):
+    except (OSError, ValueError):
         return 503, UNAVAILABLE_BODY
 
     if isinstance(payload, dict) and payload.get("status") == "running":

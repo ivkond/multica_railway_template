@@ -17,6 +17,8 @@ Public networking should stay disabled for daemon services. Railway can run the 
 
 Daemon services use `restartPolicyType=ON_FAILURE` with `restartPolicyMaxRetries=10`.
 
+The image runs as the non-root `multica` user with UID/GID `10001`. The `/data` volume must be writable by this user; startup checks this before launching the daemon.
+
 ## Build Variables
 
 Build variables are evaluated while Railway builds the image. Do not put tokens or credentials in build variables.
@@ -157,6 +159,8 @@ The runtime uses:
 | `/data/opencode/xdg-config` | XDG config root via `XDG_CONFIG_HOME` |
 
 `railway/daemon/railway.json` declares `requiredMountPath: "/data"` so Railway refuses deploys without the mounted volume. The config does not create the volume; attach it in Railway service settings.
+
+The container does not run as `root`. If a volume is recreated outside Railway, keep `/data` writable by UID/GID `10001`.
 
 ## Local Docker Build Validation
 

@@ -170,7 +170,7 @@ Add daemon sections for:
 ### Daemon Volumes And Networking
 ```
 
-Expected: docs state daemon public networking is disabled by default, each daemon service needs `/data`, backend production uploads need `/app/data/uploads`, OpenCode provider keys are configured through per-agent `custom_env`, and post-deploy verification includes both Railway daemon services.
+Expected: docs state daemon public networking is disabled by default, each daemon service needs `/data`, daemon containers run as non-root UID/GID `10001`, backend production uploads need `/app/data/uploads`, OpenCode provider keys are configured through per-agent `custom_env`, and post-deploy verification includes both Railway daemon services.
 
 ## Task 4: Validate
 

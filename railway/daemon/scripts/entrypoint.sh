@@ -9,12 +9,14 @@ readonly INFISICAL_RETRY_COUNT=3
 readonly INFISICAL_RETRY_DELAY_SECONDS=2
 
 die() {
-  printf 'entrypoint: %s\n' "$1" >&2
+  local message="$1"
+  printf 'entrypoint: %s\n' "$message" >&2
   exit 1
 }
 
 log() {
-  printf 'entrypoint: %s\n' "$1" >&2
+  local message="$1"
+  printf 'entrypoint: %s\n' "$message" >&2
 }
 
 require_env() {
@@ -73,6 +75,8 @@ esac
 case "$normalized_workspaces_root" in
   /data/home | /data/home/* | /data/codex | /data/codex/* | /data/opencode | /data/opencode/*)
     die "MULTICA_WORKSPACES_ROOT must not overlap runtime state paths: /data/home, /data/codex, /data/opencode"
+    ;;
+  *)
     ;;
 esac
 

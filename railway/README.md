@@ -93,6 +93,7 @@ Keep the backend at one replica while uploads are stored on a Railway volume. Mo
 - Mount one dedicated Railway volume per daemon service at `/data`.
 - Build and run daemon services on `linux/amd64` for MVP.
 - Restart daemon services on failure with `ON_FAILURE` and `restartPolicyMaxRetries=10`.
+- Run daemon containers as the non-root `multica` user. The `/data` volume must be writable by UID/GID `10001`.
 - Store daemon runtime credentials in Infisical, not in build variables.
 
 The daemon config includes `requiredMountPath: "/data"`, which prevents deploys without a mounted volume. It does not create the volume.
