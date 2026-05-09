@@ -4,7 +4,7 @@ Multica is an open-source platform for building, managing, and orchestrating AI 
 
 ## About Hosting Multica
 
-Hosting Multica on Railway provides a robust, production-ready environment for your agent operations. This template automates the deployment of a three-tier architecture: a Go backend for high-performance API and WebSocket handling, a Next.js frontend for a seamless management interface, and a pgvector-enabled PostgreSQL database for long-term memory and semantic search. By hosting on Railway, you benefit from automatic SSL, private networking between services, and persistent volumes for agent logs and uploads, all without the overhead of manual server configuration or container orchestration.
+Hosting Multica on Railway provides a robust, production-ready environment for your agent operations. This template automates the deployment of a Railway stack: a Go backend for high-performance API and WebSocket handling, a Next.js frontend for a seamless management interface, a pgvector-enabled PostgreSQL database for long-term memory and semantic search, and optional managed daemon runtime services for Codex and OpenCode. By hosting on Railway, you benefit from automatic SSL, private networking between services, and persistent volumes for agent logs, uploads, credentials, and workspaces, all without the overhead of manual server configuration or container orchestration.
 
 ## Quick Start & Login
 
@@ -25,8 +25,9 @@ Once your services are deployed:
 
 ## Dependencies for Multica Hosting
 
-- **Railway Account:** To provision the database, backend, and frontend services.
+- **Railway Account:** To provision the database, backend, frontend, and daemon services.
 - **GitHub Repository:** To source the code and trigger automatic redeployments on push.
+- **Infisical Project:** To store daemon runtime credentials outside Railway.
 
 ### Deployment Dependencies
 
@@ -44,7 +45,7 @@ By deploying Multica on Railway, you are one step closer to supporting a complet
 
 # Railway Deployment Guide
 
-This directory contains service config files for deploying Multica on Railway as three services: `frontend`, `backend`, and `pgvector`.
+This directory contains service config files for deploying Multica on Railway as a backend, frontend, database, and managed daemon runtime stack.
 
 ## Services
 
@@ -53,12 +54,16 @@ This directory contains service config files for deploying Multica on Railway as
 | `frontend` | GitHub repo | `/railway/frontend.railway.json` |
 | `backend` | GitHub repo | `/railway/backend.railway.json` |
 | `pgvector` | Docker image `pgvector/pgvector:pg17` | Railway service settings |
+| `daemon-opencode` | GitHub repo | `/railway/daemon/railway.json` |
+| `daemon-codex` | GitHub repo | `/railway/daemon/railway.json` |
 
 In Railway service settings or Template Composer, set the config file path for each GitHub-backed service:
 
 ```text
 backend config file path = /railway/backend.railway.json
 frontend config file path = /railway/frontend.railway.json
+daemon-opencode config file path = /railway/daemon/railway.json
+daemon-codex config file path = /railway/daemon/railway.json
 ```
 
 ## pgvector
@@ -74,6 +79,24 @@ frontend config file path = /railway/frontend.railway.json
 | **POSTGRES_USER** | The username for the primary database administrator. |
 | **POSTGRES_PASSWORD** | The password for the primary database administrator (generate a secret). |
 | **PGDATA** | The internal path within the volume where PostgreSQL data is stored. |
+
+## Backend Upload Volume
+
+Production deployments that use local uploads should mount a backend volume at `/app/data/uploads`.
+
+Keep the backend at one replica while uploads are stored on a Railway volume. Move uploads to object storage before scaling backend replicas horizontally.
+
+## Managed Daemon Services
+
+- Disable public networking by default.
+- Keep Railway healthcheck path `/health`.
+- Mount one dedicated Railway volume per daemon service at `/data`.
+- Build and run daemon services on `linux/amd64` for MVP.
+- Restart daemon services on failure with `ON_FAILURE` and `restartPolicyMaxRetries=10`.
+- Run daemon containers as the non-root `multica` user. The `/data` volume must be writable by UID/GID `10001`.
+- Store daemon runtime credentials in Infisical, not in build variables.
+
+The daemon config includes `requiredMountPath: "/data"`, which prevents deploys without a mounted volume. It does not create the volume.
 
 ## Template Composer Bulk Edit Reference
 
@@ -123,6 +146,65 @@ POSTGRES_PASSWORD="${{secret(64, "abcdef0123456789")}}" # The password for the p
 PGDATA="/var/lib/postgresql/data/pgdata" # The internal path within the volume where PostgreSQL data is stored.
 ```
 
+### Daemon OpenCode Build Variables
+```bash
+AGENT="opencode" # Build the OpenCode runtime variant.
+MULTICA_VERSION="v0.2.28" # Multica CLI release version; keep aligned with this template release.
+NODE_VERSION="22.15.0" # Node.js version used for npm-installed tools.
+PNPM_VERSION="10.10.0" # pnpm version activated through Corepack.
+INFISICAL_CLI_VERSION="0.43.82" # Infisical CLI npm package version.
+OPENCODE_VERSION="1.14.41" # OpenCode release version.
+OPENCODE_SHA256_X64="d27d3c85183a7bd2df4506484a2f508d1897962063b7ccc8466705b493963dc5" # SHA-256 for opencode-linux-x64.tar.gz.
+```
+
+### Daemon OpenCode Runtime Variables
+```bash
+AGENT="opencode" # Must match the build AGENT.
+INFISICAL_TOKEN="railway_sealed_infisical_token" # Read-only Infisical service token for this daemon path.
+INFISICAL_PROJECT_ID="infisical_project_id" # Infisical project id.
+INFISICAL_ENV="prod" # Infisical environment slug.
+INFISICAL_SECRET_PATH="/multica-daemon/agent-opencode-1" # Infisical path for this daemon runtime.
+INFISICAL_API_URL="https://eu.infisical.com/api" # Use https://app.infisical.com/api outside the EU region.
+MULTICA_SERVER_URL="https://${{backend.RAILWAY_PUBLIC_DOMAIN}}" # Public backend URL used by the daemon.
+MULTICA_APP_URL="https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}" # Public frontend URL used in task links.
+MULTICA_DAEMON_ID="agent-opencode-1" # Stable daemon identity.
+MULTICA_DAEMON_DEVICE_NAME="agent-opencode-1" # Device name displayed by Multica.
+MULTICA_AGENT_RUNTIME_NAME="OpenCode Runtime 1" # Runtime display name.
+MULTICA_WORKSPACES_ROOT="/data/workspaces" # Persistent workspace root under the daemon volume.
+PORT="8080" # Railway health proxy port.
+LOG_LEVEL="info" # Suppresses noisy debug-level wakeup messages.
+```
+
+### Daemon Codex Build Variables
+```bash
+AGENT="codex" # Build the Codex runtime variant.
+MULTICA_VERSION="v0.2.28" # Multica CLI release version; keep aligned with this template release.
+NODE_VERSION="22.15.0" # Node.js version used for npm-installed tools.
+PNPM_VERSION="10.10.0" # pnpm version activated through Corepack.
+INFISICAL_CLI_VERSION="0.43.82" # Infisical CLI npm package version.
+CODEX_VERSION="0.128.0" # OpenAI Codex CLI npm package version.
+```
+
+### Daemon Codex Runtime Variables
+```bash
+AGENT="codex" # Must match the build AGENT.
+INFISICAL_TOKEN="railway_sealed_infisical_token" # Read-only Infisical service token for this daemon path.
+INFISICAL_PROJECT_ID="infisical_project_id" # Infisical project id.
+INFISICAL_ENV="prod" # Infisical environment slug.
+INFISICAL_SECRET_PATH="/multica-daemon/agent-codex-1" # Infisical path for this daemon runtime.
+INFISICAL_API_URL="https://eu.infisical.com/api" # Use https://app.infisical.com/api outside the EU region.
+MULTICA_SERVER_URL="https://${{backend.RAILWAY_PUBLIC_DOMAIN}}" # Public backend URL used by the daemon.
+MULTICA_APP_URL="https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}" # Public frontend URL used in task links.
+MULTICA_DAEMON_ID="agent-codex-1" # Stable daemon identity.
+MULTICA_DAEMON_DEVICE_NAME="agent-codex-1" # Device name displayed by Multica.
+MULTICA_AGENT_RUNTIME_NAME="Codex Runtime 1" # Runtime display name.
+MULTICA_WORKSPACES_ROOT="/data/workspaces" # Persistent workspace root under the daemon volume.
+PORT="8080" # Railway health proxy port.
+LOG_LEVEL="info" # Suppresses noisy debug-level wakeup messages.
+```
+
+OpenCode provider credentials are not loaded from the daemon Infisical path in this MVP. Configure provider API keys per agent in Multica `custom_env`, for example `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GOOGLE_API_KEY`. These values are injected only into the spawned agent CLI process.
+
 Leave `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` unset for the web service. The browser uses same-origin `/api`, `/auth`, and `/ws` routes, and Next.js rewrites proxy those requests to `REMOTE_API_URL`. This keeps cookie auth on the frontend origin for Railway public domains.
 
 `DOCS_URL` is a build-time value for the Next.js `/docs` rewrite, so redeploy the frontend after changing it.
@@ -131,8 +213,9 @@ Leave `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` unset for the web service. 
 
 - Open the frontend domain and log in with an email code. If `RESEND_API_KEY` is unset, read the generated code from backend logs with `railway logs --service backend --latest --lines 200 --filter "Verification code"`.
 - Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` on `backend` only when users need self-serve email delivery instead of operator log-code login.
-- Install the CLI locally with `brew install multica-ai/tap/multica`.
-- Run `multica setup self-host --server-url https://<backend-domain> --app-url https://<frontend-domain>`.
+- Create one Infisical path per managed daemon runtime. Store `MULTICA_TOKEN`, optional `GITHUB_TOKEN`, and Codex-only `CODEX_AUTH_JSON_B64` there.
+- Confirm `daemon-opencode` and `daemon-codex` have public networking disabled and a volume mounted at `/data`.
+- Confirm the backend service has a volume mounted at `/app/data/uploads` when using local uploads in production.
 - Create an agent and assign an issue.
 - Set `ALLOW_SIGNUP=false` after first admin bootstrap if the deployment is private.
 - Use custom frontend/backend domains before configuring long-lived Google OAuth redirect URIs.
@@ -144,7 +227,13 @@ curl -sf https://<backend-domain>/health
 curl -sf https://<backend-domain>/readyz
 curl -I https://<frontend-domain>
 curl -I https://<frontend-domain>/docs
-multica daemon status
 ```
 
-Expected results: backend health and readiness return `ok`, the frontend homepage responds, `/docs` does not return `500`, and the local daemon is connected to the Railway backend.
+Expected results:
+
+- backend health and readiness return `ok`;
+- frontend homepage responds;
+- `/docs` does not return `500`;
+- Railway marks `daemon-opencode` and `daemon-codex` healthy through `/health`;
+- daemon logs show successful Infisical bootstrap and `multica daemon start --foreground`;
+- Multica runtimes show the expected daemon ids online, such as `agent-opencode-1` and `agent-codex-1`.
